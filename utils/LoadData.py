@@ -5,7 +5,8 @@ import codecs
 import numpy as np
 from sklearn.preprocessing import MultiLabelBinarizer
 import tensorflow.keras as kr
-
+from utils.config import conf
+from utils.ToLibsvm import to_libsvm
 
 def load_data(path, data_type, accu_dic, acc_cnt):
 
@@ -47,7 +48,7 @@ def load_data(path, data_type, accu_dic, acc_cnt):
 
     # 处理输入文本
     loaded_text = []
-    if not os.path.exists("./cutted_text_"+str(data_type)+".txt"):
+    if not os.path.exists("../data/cutted_text_"+str(data_type)+".txt"):
         print("cut text...")
         cnt = 0
 
@@ -61,13 +62,13 @@ def load_data(path, data_type, accu_dic, acc_cnt):
             loaded_text.append(cutted)
 
         # 写入文件
-        f = codecs.open("./cutted_text_"+str(data_type)+".txt", "w", "utf-8")
+        f = codecs.open("../data/cutted_text_"+str(data_type)+".txt", "w", "utf-8")
         for line in loaded_text:
             f.write(line)
             f.write('\n')
         f.close()
     else:
-        with open("./cutted_text_"+str(data_type)+".txt", encoding='utf-8') as f:
+        with open("../data/cutted_text_"+str(data_type)+".txt", encoding='utf-8') as f:
             loaded_text = f.read().splitlines()
         print("数据的长度为", len(loaded_text))
 
@@ -82,6 +83,13 @@ def preprocess(train_path, test_path):
     :param test_path:
     :return: 训练集x,y 测试集x,y
     """
+    x_train = []
+    x_dev = []
+    y_train = []
+    y_dev = []
+    '''
+    if not os.path.exists(dataset_path):
+    '''
     # accu_dic是存放的已有罪名的字典 罪名对应序号
     accu_dic = {}
     # acc_cnt是已读取的不同罪名数
@@ -106,14 +114,19 @@ def preprocess(train_path, test_path):
     train_len = len(train_texts)
     texts = train_texts+test_texts
     old_labels = train_labels+test_labels
-    # 文本的最大词数
-    sequence_length = 1000
-    # 字典的最大长度
-    max_words = 20000
-    # 单词序列化,对训练数据编码
 
+
+
+    # 文本的最大词数
+    sequence_length = conf.sequence_length
+    # 字典的最大长度
+    max_words = conf.max_words
+
+    # 单词序列化,对训练数据编码
     tokenizer = kr.preprocessing.text.Tokenizer(num_words=max_words, lower=True)
+    # 生成token字典
     tokenizer.fit_on_texts(texts)
+    # 转换为向量表示
     sequences = tokenizer.texts_to_sequences(texts)
 
     # print("sequence example:   ", sequences[0])
@@ -122,19 +135,25 @@ def preprocess(train_path, test_path):
     # print(tokenizer.word_docs)
     # print(tokenizer.index_docs)
 
+    # 一个dict，保存所有word对应的编号id，从1开始
     global word_index
     word_index = tokenizer.word_index
     # 不足填充,将每条文本的长度设置一个固定值
-    data = kr.preprocessing.sequence.pad_sequences(sequences, sequence_length)
+    data = kr.preprocessing.sequence.pad_sequences(sequences, sequence_length, padding='post')
     # print("data emaxple:     ", data[0])
 
-    # 把输出 one-hot
+    '''这里转为libsvm,输入单个x为one-hot,单个y为罪名的列表'''
+    if not os.path.exists(conf.libsvm_path):
+        to_libsvm(data, old_labels, train_len)
+
+
+    # 把输出Y one-hot
     mlb = MultiLabelBinarizer()
     labels = mlb.fit_transform(old_labels)
 
     print("shape of input: ", data.shape)
     print("shape of output: ", labels.shape)
-
+    print("type of input:", str(type(data)))
     # 将数据分为训练和测试集
     # 打乱训练数据
     np.random.seed(10)
@@ -147,4 +166,29 @@ def preprocess(train_path, test_path):
     y_dev = labels[train_len:]
     print("labels example: \n", y_dev[12])
     del train_texts, train_labels, test_texts, test_labels, texts, labels, data
+
+    '''
+    dataset = {"x_train": x_train.tolist(), "y_train": y_train.tolist(), "x_dev": x_dev.tolist(), "y_dev": y_dev.tolist()}
+    with open(dataset_path, 'w', encoding='utf-8') as js:
+        json.dump(dataset, js)
+    
+    else:
+        with open(dataset_path, 'r', encoding='utf-8') as js:
+            data = json.load(js)
+            x_train = np.array(data["x_train"])
+            x_dev = np.array(data["x_dev"])
+            y_train = np.array(data["y_train"])
+            y_dev = np.array(data["y_dev"])
+
+    x =1
+    '''
     return x_train, y_train, x_dev, y_dev
+
+
+def test():
+    a,b,c,d = preprocess(conf.train_path, conf.test_path)
+    #print("{0},{1},{2},{3}".format(len(a),len(b),len(c),len(d)))
+    #print(a[0])
+    #print(c[0])
+
+test()
