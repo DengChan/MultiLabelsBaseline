@@ -7,6 +7,8 @@ from sklearn.preprocessing import MultiLabelBinarizer
 import tensorflow.keras as kr
 from utils.config import conf
 from utils.ToLibsvm import to_libsvm
+from sklearn.datasets import load_svmlight_file
+from sklearn.utils import shuffle
 
 def load_data(path, data_type, accu_dic, acc_cnt):
 
@@ -48,7 +50,7 @@ def load_data(path, data_type, accu_dic, acc_cnt):
 
     # 处理输入文本
     loaded_text = []
-    if not os.path.exists("../data/cutted_text_"+str(data_type)+".txt"):
+    if not os.path.exists("data/cutted_text_"+str(data_type)+".txt"):
         print("cut text...")
         cnt = 0
 
@@ -62,13 +64,13 @@ def load_data(path, data_type, accu_dic, acc_cnt):
             loaded_text.append(cutted)
 
         # 写入文件
-        f = codecs.open("../data/cutted_text_"+str(data_type)+".txt", "w", "utf-8")
+        f = codecs.open("data/cutted_text_"+str(data_type)+".txt", "w", "utf-8")
         for line in loaded_text:
             f.write(line)
             f.write('\n')
         f.close()
     else:
-        with open("../data/cutted_text_"+str(data_type)+".txt", encoding='utf-8') as f:
+        with open("data/cutted_text_"+str(data_type)+".txt", encoding='utf-8') as f:
             loaded_text = f.read().splitlines()
         print("数据的长度为", len(loaded_text))
 
@@ -136,7 +138,6 @@ def preprocess(train_path, test_path):
     # print(tokenizer.index_docs)
 
     # 一个dict，保存所有word对应的编号id，从1开始
-    global word_index
     word_index = tokenizer.word_index
     # 不足填充,将每条文本的长度设置一个固定值
     data = kr.preprocessing.sequence.pad_sequences(sequences, sequence_length, padding='post')
@@ -182,8 +183,25 @@ def preprocess(train_path, test_path):
 
     x =1
     '''
-    return x_train, y_train, x_dev, y_dev
+    return x_train, y_train, x_dev, y_dev, word_index
 
+
+def ml_load_data():
+    train_path = 'data/CAIL_train.libsvm'
+    test_path = 'data/CAIL_test.libsvm'
+    # 读取数据
+    print("Loading data ...")
+    X_train, Y_train = load_svmlight_file(train_path, n_features=conf.max_words, dtype=np.float64, multilabel=True)
+    # X_exam = X_train.toarray()
+    # del X_exam
+    # 打乱数据
+    X_train, Y_train = shuffle(X_train, Y_train, random_state=0)
+    X_test, Y_test = load_svmlight_file(test_path, n_features=conf.max_words, dtype=np.float64, multilabel=True)
+    # 把label转为one-hot
+    mlb = MultiLabelBinarizer()
+    Y_train = mlb.fit_transform(Y_train)
+    Y_test = mlb.fit_transform(Y_test)
+    return X_train, Y_train, X_test, Y_test
 
 def test():
     a,b,c,d = preprocess(conf.train_path, conf.test_path)
@@ -191,4 +209,4 @@ def test():
     #print(a[0])
     #print(c[0])
 
-test()
+# test()
