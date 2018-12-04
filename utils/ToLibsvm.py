@@ -15,6 +15,7 @@ train_len: 训练集的长度
 
 '''
 
+
 def to_libsvm(x_array, y_array, train_len):
     length = len(x_array)
     print("calculating TF-IDF ....")
@@ -22,6 +23,7 @@ def to_libsvm(x_array, y_array, train_len):
     print("Done with calculating TF-IDF.")
 
     print("Converting nparray to libsvm ...")
+    page = -1
     for i in range(length):
         line = ""
         first = True
@@ -51,6 +53,7 @@ def to_libsvm(x_array, y_array, train_len):
         if i < train_len:
             with open('../data/CAIL_train.libsvm', 'a', encoding='utf-8') as f:
                 f.write(line)
+
         else:
             # 测试集写入
             with open('../data/CAIL_test.libsvm', 'a', encoding='utf-8') as f:

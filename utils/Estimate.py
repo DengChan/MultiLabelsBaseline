@@ -2,6 +2,7 @@ from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_
 import tensorflow.keras as kr
 import numpy as np
 import time
+from utils.config import conf
 
 
 class Metrics(kr.callbacks.Callback):
@@ -9,6 +10,9 @@ class Metrics(kr.callbacks.Callback):
         self.val_f1s_macro = []
         self.val_recalls_macro = []
         self.val_precisions_macro = []
+        self.val_f1s_micro = []
+        self.val_recalls_micro = []
+        self.val_precisions_micro = []
         # def on_train_begin(self, logs={}):
         #   self.val_f1s = []
         #   self.val_recalls = []
@@ -49,13 +53,20 @@ class Metrics(kr.callbacks.Callback):
         self.val_f1s_micro.append(_val_f1_micro)
         self.val_recalls_micro.append(_val_recall_micro)
         self.val_precisions_micro.append(_val_precision_micro)
-        model_name = 'f1_'+str(_val_f1_macro)+time.strftime('_%Y_%m_%d', time.localtime(time.time()))+'.h5'
-        self.model.save('checkpoints/{0}'.format(model_name))
-        self.model.summary()
+        model_name = conf.model_type+'f1_'+str(_val_f1_macro)+time.strftime('_%Y_%m_%d', time.localtime(time.time()))
+        self.model.save('checkpoints/'+model_name+'.h5')
+        # self.model.summary()
         print('MACRO: — val_f1: %f — val_precision: %f — val_recall %f' % (
             _val_f1_macro, _val_precision_macro, _val_recall_macro))
         print('MICRO: — val_f1: %f — val_precision: %f — val_recall %f' % (
             _val_f1_micro, _val_precision_micro, _val_recall_micro))
+        with open('log/'+conf.model_type+time.strftime('_%Y_%m_%d', time.localtime(time.time()))+'.txt', 'a', encoding='utf-8') as ff:
+            ff.write('EPOCH: {0}\n'.format(epoch))
+            ff.write('MACRO: — val_f1: %f — val_precision: %f — val_recall %f\n' % (
+             _val_f1_macro, _val_precision_macro, _val_recall_macro))
+            ff.write('MICRO: — val_f1: %f — val_precision: %f — val_recall %f\n' % (
+             _val_f1_micro, _val_precision_micro, _val_recall_micro))
+            ff.write('----------------------------------------------------------------------\n')
         # print('— 验证集的F1-SCORE: %f ' % _val_f1)
         # print("-----------------------------模型已保存------------------------")
         return

@@ -10,6 +10,7 @@ from utils.ToLibsvm import to_libsvm
 from sklearn.datasets import load_svmlight_file
 from sklearn.utils import shuffle
 
+
 def load_data(path, data_type, accu_dic, acc_cnt):
 
     '''
@@ -50,7 +51,7 @@ def load_data(path, data_type, accu_dic, acc_cnt):
 
     # 处理输入文本
     loaded_text = []
-    if not os.path.exists("data/cutted_text_"+str(data_type)+".txt"):
+    if not os.path.exists(conf.cut_path+str(data_type)+".txt"):
         print("cut text...")
         cnt = 0
 
@@ -60,17 +61,17 @@ def load_data(path, data_type, accu_dic, acc_cnt):
             cutted = jieba.lcut(text)
             # 以空格间隔
             cutted = " ".join(cutted)
-            print("{0}  :  {1}".format(cnt,cutted))
+            print("{0}  :  {1}".format(cnt, cutted))
             loaded_text.append(cutted)
 
         # 写入文件
-        f = codecs.open("data/cutted_text_"+str(data_type)+".txt", "w", "utf-8")
+        f = codecs.open(conf.cut_path+str(data_type)+".txt", "w", "utf-8")
         for line in loaded_text:
             f.write(line)
             f.write('\n')
         f.close()
     else:
-        with open("data/cutted_text_"+str(data_type)+".txt", encoding='utf-8') as f:
+        with open(conf.cut_path+str(data_type)+".txt", encoding='utf-8') as f:
             loaded_text = f.read().splitlines()
         print("数据的长度为", len(loaded_text))
 
@@ -144,8 +145,8 @@ def preprocess(train_path, test_path):
     # print("data emaxple:     ", data[0])
 
     '''这里转为libsvm,输入单个x为one-hot,单个y为罪名的列表'''
-    if not os.path.exists(conf.libsvm_path):
-        to_libsvm(data, old_labels, train_len)
+    #if not os.path.exists(conf.libsvm_path):
+    to_libsvm(data, old_labels, train_len)
 
 
     # 把输出Y one-hot
@@ -204,9 +205,9 @@ def ml_load_data():
     return X_train, Y_train, X_test, Y_test
 
 def test():
-    a,b,c,d = preprocess(conf.train_path, conf.test_path)
+    a, b, c, d,e = preprocess('../data/data_train.json', '../data/data_test.json')
     #print("{0},{1},{2},{3}".format(len(a),len(b),len(c),len(d)))
     #print(a[0])
     #print(c[0])
 
-# test()
+#test()
