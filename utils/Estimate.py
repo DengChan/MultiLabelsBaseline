@@ -83,3 +83,24 @@ def ml_estimate(val_predict, val_target):
     _val_precision_micro = precision_score(val_target, val_predict, average='micro')
     _precision = (_val_precision_macro, _val_precision_micro)
     return _f1, _recall, _precision
+
+def test():
+    l1 =np.asarray([
+          [1,0,0],
+          [0,1,1],
+          [0,0,1],
+          [1,0,1]],dtype=np.int32)
+    l2 = np.asarray([
+          [1,0,0],
+          [0,1,0],
+          [0,0,1],
+          [1,0,0]],dtype=np.int32)
+    f1 = f1_score(l1, l2, average='macro')
+    print(f1)
+    f1 = f1_score(l1, l2, average='micro')
+    print(f1)
+    p = precision_score(l1, l2, average='macro')
+    print(p)
+
+# test()
+

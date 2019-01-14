@@ -3,10 +3,12 @@ import json
 import jieba
 import codecs
 import numpy as np
+import scipy.io as sio
 from sklearn.preprocessing import MultiLabelBinarizer
 import tensorflow.keras as kr
 from utils.config import conf
 from utils.ToLibsvm import to_libsvm
+from utils.ToLibsvm import to_libsvm2
 from sklearn.datasets import load_svmlight_file
 from sklearn.utils import shuffle
 
@@ -99,10 +101,10 @@ def preprocess(train_path, test_path):
     acc_cnt = 0
     train_texts, train_labels, acc_cnt = load_data(train_path, 0, accu_dic, acc_cnt)
     print('Load Train data Done')
-    print("dic len: {0},cnt: {1}".format(len(accu_dic), acc_cnt))
+    print("data len: {0},dic cnt: {1}".format(len(train_texts), acc_cnt))
     test_texts, test_labels, acc_cnt = load_data(test_path, 1, accu_dic, acc_cnt)
     print('Load Text data Done')
-    print("dic len: {0},cnt: {1}".format(len(accu_dic), acc_cnt))
+    print("data len: {0},dic cnt: {1}".format(len(test_texts), acc_cnt))
     #train_texts = np.array(train_texts)
     #test_texts = np.array(test_texts)
 
@@ -117,7 +119,9 @@ def preprocess(train_path, test_path):
     train_len = len(train_texts)
     texts = train_texts+test_texts
     old_labels = train_labels+test_labels
-
+    '''这里转为libsvm,输入单个x 分词后的句子,单个y为罪名的列表'''
+    if not os.path.exists(conf.libsvm_path):
+        to_libsvm2(texts, old_labels, train_len)
 
 
     # 文本的最大词数
@@ -144,9 +148,6 @@ def preprocess(train_path, test_path):
     data = kr.preprocessing.sequence.pad_sequences(sequences, sequence_length, padding='post')
     # print("data emaxple:     ", data[0])
 
-    '''这里转为libsvm,输入单个x为one-hot,单个y为罪名的列表'''
-    #if not os.path.exists(conf.libsvm_path):
-    to_libsvm(data, old_labels, train_len)
 
 
     # 把输出Y one-hot
@@ -169,27 +170,12 @@ def preprocess(train_path, test_path):
     print("labels example: \n", y_dev[12])
     del train_texts, train_labels, test_texts, test_labels, texts, labels, data
 
-    '''
-    dataset = {"x_train": x_train.tolist(), "y_train": y_train.tolist(), "x_dev": x_dev.tolist(), "y_dev": y_dev.tolist()}
-    with open(dataset_path, 'w', encoding='utf-8') as js:
-        json.dump(dataset, js)
-    
-    else:
-        with open(dataset_path, 'r', encoding='utf-8') as js:
-            data = json.load(js)
-            x_train = np.array(data["x_train"])
-            x_dev = np.array(data["x_dev"])
-            y_train = np.array(data["y_train"])
-            y_dev = np.array(data["y_dev"])
-
-    x =1
-    '''
     return x_train, y_train, x_dev, y_dev, word_index
 
 
 def ml_load_data():
-    train_path = 'data/CAIL_train.libsvm'
-    test_path = 'data/CAIL_test.libsvm'
+    train_path = conf.libsvm_train
+    test_path = conf.libsvm_test
     # 读取数据
     print("Loading data ...")
     X_train, Y_train = load_svmlight_file(train_path, n_features=conf.max_words, dtype=np.float64, multilabel=True)
@@ -205,9 +191,14 @@ def ml_load_data():
     return X_train, Y_train, X_test, Y_test
 
 def test():
-    a, b, c, d,e = preprocess('../data/data_train.json', '../data/data_test.json')
+    a, b, c, d, e = preprocess(conf.train_path, conf.test_path)
+    # a = a.tolist()
+    # b = b.tolist()
+    # c = c.tolist()
+    # d = d.tolist()
+    #sio.savemat('data.mat', {'x0': a, 'y0': b, 'x1': c, 'y1': d})  # 变量分别保存在名字为xyz下面
     #print("{0},{1},{2},{3}".format(len(a),len(b),len(c),len(d)))
     #print(a[0])
     #print(c[0])
 
-#test()
+# test()

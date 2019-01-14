@@ -9,6 +9,7 @@ from utils.LoadData import preprocess
 from utils.config import conf
 from models.cudnnGRU import GRUModel
 from models.TextCNN import CNNModel
+from models.bpmll import BPMLLModel
 from utils.Estimate import Metrics
 
 if __name__ == '__main__':
@@ -27,6 +28,8 @@ if __name__ == '__main__':
         elif conf.model_type == 'CNN':
             model = CNNModel(conf.filter_sizes, conf.num_filters, num_words,
                              conf.embedding_size, conf.sequence_length, optimizer, conf.num_classes)
+        elif conf.model_type == 'BPMLL':
+            model = BPMLLModel(optimizer, conf.num_classes)
         metric = Metrics()
         print("开始训练 ....")
         model.fit(x_train, y_train, batch_size=conf.batch_size, epochs=conf.epochs,

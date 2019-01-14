@@ -1,5 +1,6 @@
 import numpy
 from utils.CalTFIDF import cal_TF_IDF
+from utils.CalTFIDF import cal_TF_IDF_2
 from utils.config import conf
 
 
@@ -51,16 +52,52 @@ def to_libsvm(x_array, y_array, train_len):
         line = line+'\n'
         # 训练集写入
         if i < train_len:
-            with open('../data/CAIL_train.libsvm', 'a', encoding='utf-8') as f:
+            with open(conf.libsvm_train, 'a', encoding='utf-8') as f:
                 f.write(line)
-
         else:
             # 测试集写入
-            with open('../data/CAIL_test.libsvm', 'a', encoding='utf-8') as f:
+            with open(conf.libsvm_test, 'a', encoding='utf-8') as f:
                 f.write(line)
 
         # print("example of libsvm:\n"+line)
     print("Converting work done. ")
+
+
+def to_libsvm2(x_array, y_array, train_len):
+    length = len(x_array)
+    print("calculating TF-IDF ....")
+    x_tf_idf = cal_TF_IDF_2(x_array)
+    print("Done with calculating TF-IDF.")
+
+    print("Converting nparray to libsvm ...")
+    for i in range(length):
+        line = ""
+        first = True
+        for j in range(len(y_array[i])):
+            if first:
+                line = line + str(y_array[i][j])
+                first = False
+            else:
+                line = line + ',' + str(y_array[i][j])
+
+        for j in range(len(x_tf_idf[i])):
+            value = x_tf_idf[i][j]
+            # 小于1的认为该值为0跳过，如果存在该词 跳过
+            if (value - 0.0) < 1e-9:
+                continue
+            else:
+                line = line + ' {0}:{1}'.format(j+1, value)
+        line = line+'\n'
+        if i < train_len:
+            with open(conf.libsvm_train, 'a', encoding='utf-8') as f:
+                f.write(line)
+        else:
+            # 测试集写入
+            with open(conf.libsvm_test, 'a', encoding='utf-8') as f:
+                f.write(line)
+    print("Converting work done. ")
+
+
 
 
 
